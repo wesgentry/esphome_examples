@@ -1,0 +1,86 @@
+esphome:
+  name: #name_of_your_node#
+  platform: ESP8266
+  board: esp01_1m
+
+wifi:
+  manual_ip:
+    static_ip: #instert static ip here#
+    gateway: #instert gateway here#
+    subnet: #instert subnet here#
+  ssid: #your_wifi#
+  password: #your_password#
+
+# Main Config #
+
+output:
+  - platform: esp8266_pwm
+    id: onboard_green_led
+    pin:
+      number: 1
+      
+switch:
+  - platform: gpio
+    pin: GPIO1
+    name: "#Name Of Your Node Green LED#"
+    id: green_led
+
+  - platform: gpio
+    pin: GPIO14
+    name: "#Name Of Your Node# Relay"
+    id: #name_of_your_node_relay#
+
+binary_sensor:
+  - platform: gpio
+    filters:
+      - invert:
+#      - delayed_off: 200ms
+    name: "#Name Of Your Node Switch#"
+    pin: GPIO0
+    id: #name_of_your_node_switch#
+    on_multi_click:
+    - timing:
+        - ON for at most 1s
+        - OFF for at least 0.2s
+      then:
+        - logger.log: "Single Short Clicked"
+        - switch.toggle: green_led
+        - homeassistant.service:
+            service: switch.toggle
+            data:
+              entity_id: #entity id of HA switch you want to toggle#
+    - timing:
+        - ON for at most 1s
+        - OFF for at most 1s
+        - ON for at most 1s
+        - OFF for at least 0.2s
+      then:
+        - homeassistant.service:
+            service: fan.set_speed
+            data:
+              entity_id: #entity id of HA fan you want to turn on#
+              speed: high
+        - logger.log: "Double Short Clicked"
+    - timing:
+        - ON for at most 1s
+        - OFF for at most 1s
+        - ON for at most 1s
+        - OFF for at most 1s
+        - ON for at most 1s
+        - OFF for at least 0.2s
+      then:
+        - homeassistant.service:
+            service: input_boolean.turn_on
+            data:
+              entity_id: #entity id of the input boolean that controls the automation you want to turn on#
+        - logger.log: "Tripple Short Clicked"
+
+
+# Enables #
+
+logger:
+  level: VERBOSE
+api:
+ota:
+web_server:
+  port: 80
